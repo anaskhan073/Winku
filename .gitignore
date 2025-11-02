@@ -1,0 +1,27 @@
+# Node modules
+/node_modules/
+
+# Frontend config file
+/frontend/config.env
+
+# Backend config file
+/backend/config.env
+
+# Build folders
+/build/
+/dist/
+
+# Logs
+*.log
+
+# OS generated files
+.DS_Store
+Thumbs.db
+
+# Environment files
+.env
+
+# Temporary files
+*.tmp
+
+
