@@ -1,0 +1,262 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@plugin "daisyui";
+@import url('https://fonts.googleapis.com/css2?family=Mulish:ital,wght@0,200..1000;1,200..1000&display=swap');
+
+:root {
+    --main-color: #1fb6ff;
+    --main-darkcolor: #3b96da;
+    --text-dark: #2C2C2C;
+    --light: #FFFFFF;
+    --text-gray: #555555;
+    --bg-dark: #000000;
+    --bg-light-dark: #1E1E1E;
+    --bg-light-gray: #f4f7f6;
+    --btn-bg-color: #5c92cc;
+    --btn-hover-color: #088dcd;
+}
+
+body {
+    font-family: "Mulish", sans-serif;
+    margin: 0;
+    padding: 0;
+    background-color: var(--bg-light-gray);
+}
+
+h1,
+h2,
+h3,
+h4.h5,
+h6,
+p {
+    margin: 0;
+    padding: 0;
+}
+
+.submit-btn {
+    background-color: var(--btn-bg-color);
+    color: var(--light);
+    padding: 7px 30px;
+}
+
+.submit-btn:hover {
+    box-shadow: 0 6px 10px 0 rgba(0, 0, 0, .14), 0 1px 18px 0 rgba(0, 0, 0, .12), 0 3px 5px -1px rgba(0, 0, 0, .2);
+    background-color: var(--btn-hover-color);
+}
+
+.input-wrapper {
+    position: relative;
+    margin-bottom: 20px;
+}
+.input-wrapper input {
+    padding: 12px 0 8px;
+    font-size: 17px;
+    border: none;
+    border-bottom: 2px solid var(--text-gray);
+    outline: none;
+    background: transparent;
+    color: var(--bg-dark);
+    box-sizing: border-box;
+}
+
+.input-wrapper label {
+    position: absolute;
+    top: 12px;
+    left: 0;
+    font-size: 17px;
+    color: var(--text-gray);
+    pointer-events: none;
+    transition: all 0.2s ease;
+}
+
+.input-wrapper input:focus~label,
+.input-wrapper input:not(:placeholder-shown)~label {
+    top: -10px;
+    font-size: 13px;
+    color: var(--main-color);
+}
+
+.input-wrapper input:focus {
+    border-bottom: 2px solid var(--main-color);
+    transition: width 0.3s ease;
+}
+
+.authenctication-section {
+    width: 100vw;
+    height: 100vh;
+    display: flex;
+    flex-direction: row;
+}
+
+.authenctication-section .authsidescreen {
+    width: 50vw;
+    height: 100vh;
+    background-color: var(--main-color);
+    color: var(--light);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 20px;
+    align-items: center;
+}
+
+.authenctication-section .authsidescreen h3 {
+    font-family: 'hobo std';
+    font-size: 40px;
+}
+
+.authenctication-section .authsidescreen .logo-side {
+    border: 20px solid #4fa1de;
+    background-color: var(--main-darkcolor);
+    width: 250px;
+    height: 250px;
+    border-radius: 75%;
+    margin: 60px 0;
+    display: flex;
+    align-items: end;
+    justify-content: center;
+}
+
+.authenctication-section .authsidescreen .logo-side img {
+    width: 65%;
+}
+
+/* Social Buttons Container */
+.authenctication-section .authsidescreen .social-buttons {
+    display: flex;
+    justify-content: center;
+    gap: 1rem;
+    flex-wrap: wrap;
+}
+
+.authenctication-section .authsidescreen .social-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    text-decoration: none;
+    font-weight: bold;
+    color: white;
+    font-size: 1.4rem;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.authenctication-section .authsidescreen .social-btn:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.25);
+}
+
+.authenctication-section .authsidescreen .social-btn .icon {
+    position: relative;
+    z-index: 2;
+}
+
+/* Brand Colors */
+.authenctication-section .authsidescreen .facebook {
+    background: #1877f2;
+}
+
+.authenctication-section .authsidescreen .facebook:hover {
+    background: #166fe5;
+}
+
+.authenctication-section .authsidescreen .whatsapp {
+    background: #25d366;
+}
+
+.authenctication-section .authsidescreen .whatsapp:hover {
+    background: #1ebe57;
+}
+
+.authenctication-section .authsidescreen .instagram {
+    background: radial-gradient(circle at 30% 107%, #fdf497 0%, #fdf497 5%, #fd5949 45%, #d6249f 60%, #285AEB 90%);
+}
+
+.authenctication-section .authsidescreen .instagram:hover {
+    background: radial-gradient(circle at 30% 107%, #fce771 0%, #fce771 5%, #fc4a3a 45%, #c11d8a 60%, #1e4fd8 90%);
+}
+
+.authenctication-section .authsidescreen .twitter {
+    background: #000000;
+}
+
+.authenctication-section .authsidescreen .twitter:hover {
+    background: #1a1a1a;
+}
+
+/* Custom Icons using CSS */
+.authenctication-section .authsidescreen .facebook .icon {
+    font-family: 'Arial', sans-serif;
+    font-weight: bold;
+    font-size: 1.6rem;
+    line-height: 1;
+}
+
+.authenctication-section .authsidescreen .whatsapp .icon,
+.instagram .icon,
+.twitter .icon {
+    font-size: 1.1rem;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+}
+
+/* X (Twitter) Logo using CSS */
+.authenctication-section .authsidescreen .twitter .icon {
+    width: 20px;
+    height: 20px;
+    background: currentColor;
+    mask: url("data:image/svg+xml,%3Csvg viewBox='0 0 24 24' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M18.9 1.3h3.8l-8.3 9.5 9.8 12.9h-7.7l-6-7.8-6.9 7.8H.8l8.8-10-8.3-9.5h7.9l5.4 7.2 6.3-7.2z'/%3E%3C/svg%3E") no-repeat center;
+    mask-size: contain;
+    -webkit-mask: url("data:image/svg+xml,%3Csvg viewBox='0 0 24 24' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M18.9 1.3h3.8l-8.3 9.5 9.8 12.9h-7.7l-6-7.8-6.9 7.8H.8l8.8-10-8.3-9.5h7.9l5.4 7.2 6.3-7.2z'/%3E%3C/svg%3E") no-repeat center;
+    -webkit-mask-size: contain;
+}
+
+.authenctication-section .formside {
+    width: 50vw;
+    height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.authenctication-section .formside .form-box {
+    background: #fff none repeat scroll 0 0;
+    box-shadow: 0 0 35px #e2e2e2;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    padding: 35px 55px;
+    width: 505px;
+}
+
+.authenctication-section .formside .form-box .heading {}
+
+.authenctication-section .formside .form-box .heading h3 {
+    font-size: 30px;
+    font-weight: bold;
+}
+
+.authenctication-section .formside .form-box .heading p {
+    color: var(--text-gray);
+}
+
+.authenctication-section .formside .form-box .heading a {
+    color: var(--main-color);
+}
+
+.authenctication-section .formside .form-box .heading a:hover {
+    color: var(--main-darkcolor);
+}
+
+.authenctication-section .formside .form-box .form input{
+    width: 100%;
+}
+
+
