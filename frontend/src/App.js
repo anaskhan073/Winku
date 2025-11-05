@@ -7,6 +7,8 @@ import './css/app.css';
 import Home from "./pages/Home";
 import Login from "./pages/Auth/Login";
 import Signup from "./pages/Auth/Signup";
+import ForgetPassword from "./pages/Auth/ForgetPassword";
+import ResetPassword from "./pages/Auth/ResetPassword";
 
 
 
@@ -20,8 +22,8 @@ const App = () => {
         {/* before login  */}
         <Route path="/login" element={<Login />}/>
         <Route path="/register" element={<Signup />}/>
-
-        
+        <Route path="/forget-password" element={<ForgetPassword />}/>
+        <Route path="/reset-password" element={<ResetPassword />}/>
       </Routes>
 
       <Toaster position="top-right" reverseOrder={false} />
