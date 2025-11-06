@@ -337,3 +337,9 @@ export const resetPassword = CatchAsyncError(async (req, res, next)=>{
     sendToken(user, 200, "Reset Password Successfully.", res);
 });
 
+
+// check authentication status
+export const checkAuth = (req, res) => {
+  const hasToken = !!req.cookies?.token;
+  res.json({ authenticated: hasToken });
+};
