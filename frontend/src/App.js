@@ -1,4 +1,5 @@
-import { Routes, Route, useNavigate } from "react-router-dom";
+
+import { Routes, Route, Navigate, useNavigate } from "react-router-dom";
 import { useEffect } from "react";
 import { Toaster } from "react-hot-toast";
 import './css/app.css';
@@ -11,32 +12,28 @@ import ForgetPassword from "./pages/Auth/ForgetPassword";
 import ResetPassword from "./pages/Auth/ResetPassword";
 
 const App = () => {
-  const navigate = useNavigate();
   const dispatch = useDispatch();
   const { isAuthenticated } = useSelector((state) => state.auth);
-
-  console.log("isAuthenticated", isAuthenticated);
 
   useEffect(() => {
     check_auth(dispatch);
   }, [dispatch]);
 
+  const islogin = localStorage.getItem("token") || isAuthenticated?.authenticated;
 
   return (
     <>
       <Routes>
-        {isAuthenticated ? (
-          <>
-            <Route path="/" element={<Home />} />
-          </>
-        ) : (
-          <>
-            <Route path="/login" element={<Login />} />
-            <Route path="/register" element={<Signup />} />
-            <Route path="/forget-password" element={<ForgetPassword />} />
-            <Route path="/reset-password" element={<ResetPassword />} />
-          </>
-        )}
+        {/* before login */}
+        <Route path="/login" element={islogin ? <Navigate to="/" replace /> : <Login />} />
+        <Route path="/register" element={islogin ? <Navigate to="/" replace /> : <Signup />} />
+        <Route path="/forget-password" element={islogin ? <Navigate to="/" replace /> : <ForgetPassword />} />
+        <Route path="/reset-password" element={islogin ? <Navigate to="/" replace /> : <ResetPassword />} />
+        <Route path="*" element={<Navigate to={islogin ? "/" : "/login"} replace />} />,
+
+        {/* after login */}
+        <Route path="/" element={islogin ? <Home /> : <Navigate to="/login" replace />} />
+
       </Routes>
 
       <Toaster position="top-right" reverseOrder={false} />

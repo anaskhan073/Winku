@@ -19,35 +19,33 @@ const userSchema = new mongoose.Schema({
         // required: true,
         unique: true,
     },
-    // emailVerified: {
-    //     type: Boolean,
-    //     default: false
-    // },
-    verificationCode: Number,
-    // VerificationCode: {
-    //     type: Number
-    // },
+    emailVerified: {
+        type: Boolean,
+        default: false
+    },
+    emailverificationCode: Number,
+    emailverificationCodeExpire: {
+        type: Date,
+    },
     phone: {
         type: String,
         unique: true,
-        // default: ""
+        default: "",
     },
-    // phoneVerified: {
-    //     type: Boolean,
-    //     default: false
-    // },
-    // phoneVerificationCode: {
-    //     type: Number
-    // },
+    phoneVerified: {
+        type: Boolean,
+        default: false
+    },
+    phoneVerificationCode: Number,
+    phoneverificationCodeExpire: {
+        type: Date,
+    },
     password: {
         type: String,
         minlength: 6,
         select: false,
     },
-    accountVerified: { type: Boolean, default: false },
-    verificationCodeExpire: {
-        type: Date,
-    },
+    // accountVerified: { type: Boolean, default: false },
     resetPasswordToken: {
         type: String
     },
@@ -64,18 +62,12 @@ const userSchema = new mongoose.Schema({
     },
     role: {
         type: String,
-        enum: ['user', 'admin'],
+        enum: ['user', 'creater', 'admin'],
         default: 'user',
     },
     authProviders: {
-        type: Map, // or Object if preferred
-        of: String, // e.g., { google: 'google-id', facebook: 'fb-id' }
-        default: {},
-    },
-    settings: {
-        type: Map,
-        of: mongoose.Schema.Types.Mixed,
-        default: {},
+        type: String,
+        default: "",
     },
     createdAt: {
         type: Date,
@@ -87,6 +79,11 @@ const userSchema = new mongoose.Schema({
     lastSeenAt: {
         type: Date,
     },
+    // settings: {
+    //     type: Map,
+    //     of: mongoose.Schema.Types.Mixed,
+    //     default: {},
+    // },
 },
     { timestamps: true }
 );
@@ -97,9 +94,9 @@ userSchema.pre("save", async function (next) {
     if (this.email) {
         this.email = this.email.trim().toLowerCase();
     }
-    if (this.phone) {
-        this.phone = this.phone.trim();
-    }
+    // if (this.phone) {
+    //     this.phone = this.phone.trim();
+    // }
 
     // Generate username if not exists
     if (!this.username || this.username.trim() === "") {
@@ -122,7 +119,6 @@ userSchema.pre("save", async function (next) {
     if (this.isModified("password") && this.password) {
         this.password = await bcrypt.hash(this.password, 10);
     }
-
     next();
 });
 
@@ -131,22 +127,33 @@ userSchema.methods.comparePassword = async function (enteredPassword) {
     return await bcrypt.compare(enteredPassword, this.password);
 };
 
-userSchema.methods.generateVerificationCode = function () {
+userSchema.methods.generateemailVerificationCode = function () {
     function generateRandomFiveDigitNumber() {
         const firstDigit = Math.floor(Math.random() * 9) + 1;
         const remainingDigits = Math.floor(Math.random() * 10000)
             .toString()
             .padStart(4, 0);
-
         return parseInt(firstDigit + remainingDigits);
     }
-    const verificationCode = generateRandomFiveDigitNumber();
-    this.verificationCode = verificationCode;
-    this.verificationCodeExpire = Date.now() + 10 * 60 * 1000;
-
-    return verificationCode;
+    const emailverificationCode = generateRandomFiveDigitNumber();
+    this.emailverificationCode = emailverificationCode;
+    this.emailverificationCodeExpire = Date.now() + 10 * 60 * 1000;
+    return emailverificationCode;
 };
 
+userSchema.methods.generatephoneVerificationCode = function () {
+    function generateRandomFiveDigitNumber() {
+        const firstDigit = Math.floor(Math.random() * 9) + 1;
+        const remainingDigits = Math.floor(Math.random() * 10000)
+            .toString()
+            .padStart(4, 0);
+        return parseInt(firstDigit + remainingDigits);
+    }
+    const phoneverificationCode = generateRandomFiveDigitNumber();
+    this.phoneverificationCode = phoneverificationCode;
+    this.phoneverificationCodeExpire = Date.now() + 10 * 60 * 1000;
+    return phoneverificationCode;
+};
 
 userSchema.methods.generateToken = async function () {
     return jwt.sign({ id: this._id }, process.env.JWT_SECRET_KEY, {
@@ -154,17 +161,8 @@ userSchema.methods.generateToken = async function () {
     });
 };
 
-
-userSchema.methods.generateToken = async function () {
-    return jwt.sign({ id: this._id }, process.env.JWT_SECRET_KEY, {
-        expiresIn: '7d'
-    })
-}
-
-
 userSchema.methods.generateResetPasswordToken = async function(){
     const resetToken = crypto.randomBytes(20).toString("hex");
-
     this.resetPasswordToken = crypto.createHash("sha256").update(resetToken).digest("hex");
     this.resetPasswordExpire = Date.now() + 15 * 60 * 1000;
     return resetToken;
