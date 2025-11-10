@@ -79,11 +79,11 @@ const userSchema = new mongoose.Schema({
     lastSeenAt: {
         type: Date,
     },
-    // settings: {
-    //     type: Map,
-    //     of: mongoose.Schema.Types.Mixed,
-    //     default: {},
-    // },
+    settings: {
+        type: Map,
+        of: mongoose.Schema.Types.Mixed,
+        default: {},
+    },
 },
     { timestamps: true }
 );

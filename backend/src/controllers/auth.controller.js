@@ -188,7 +188,6 @@ async function phonesendVerificationCode(
     }
 }
 
-
 // verify code 
 export const emailverifyOTP = CatchAsyncError(async (req, res, next) => {
     let { email, otp } = req.body;
@@ -251,18 +250,18 @@ export const emailverifyOTP = CatchAsyncError(async (req, res, next) => {
         }
 
         // === CHECK EXPIRY ===
-        if (!user.verificationCodeExpire || Date.now() > new Date(user.verificationCodeExpire).getTime()) {
+        if (!user.emailverificationCodeExpire || Date.now() > new Date(user.emailverificationCodeExpire).getTime()) {
             return next(new ErrorHandler("OTP has expired.", 400));
         }
 
         // === FINALIZE VERIFICATION ===
-        user.accountVerified = true;
-        user.verificationCode = null;
-        user.verificationCodeExpire = null;
+        user.emailVerified = true;
+        user.emailverificationCode = null;
+        user.emailverificationCodeExpire = null;
         await user.save({ validateModifiedOnly: true });
 
         // === SEND JWT TOKEN ===
-        sendToken(user, 200, "Account verified successfully!", res);
+        sendToken(user, 200, "Email verified successfully!", res);
 
     } catch (error) {
         console.error("verifyOTP Error:", error);
@@ -270,6 +269,7 @@ export const emailverifyOTP = CatchAsyncError(async (req, res, next) => {
     }
 });
 
+// email verify code
 export const verifyOTP = CatchAsyncError(async (req, res, next) => {
     let { email, otp, phone } = req.body;
 
@@ -359,20 +359,55 @@ export const verifyOTP = CatchAsyncError(async (req, res, next) => {
     }
 });
 
+
+
+
 // login 
 export const login = CatchAsyncError(async (req, res, next) => {
-    const { email, password } = req.body;
-    if (!email || !password) {
-        return next(new ErrorHandler("Email & password required", 400));
+    const { emailOrPhone, password } = req.body;
+
+    if (!emailOrPhone || !password) {
+        return next(new ErrorHandler("Email/Phone & password required", 400));
+    }
+    let user = null;
+    // Step 1: Try to find user by email
+    user = await User.findOne({
+        email: emailOrPhone,
+        emailVerified: true
+    }).select("+password");
+
+    // Step 2: If not found by email, try by phone (only if phone is verified)
+    if (!user) {
+        user = await User.findOne({
+            phone: emailOrPhone,
+            phoneVerified: true,     // Must be verified
+            emailVerified: true
+        }).select("+password");
+
+        if (!user) {
+            // Check if phone exists but not verified
+            const unverifiedUser = await User.findOne({ phone: emailOrPhone });
+            if (unverifiedUser && !unverifiedUser.phoneVerified) {
+                return next(new ErrorHandler("Phone number not verified. Please verify your phone first.", 403));
+            }
+        }
     }
 
-    const user = await User.findOne({ email, accountVerified: true }).select("+password");
-    if (!user || !(await user.comparePassword(password))) {
-        return next(new ErrorHandler("Invalid email or password", 401));
+    // Step 3: If no user found at all
+    if (!user) {
+        return next(new ErrorHandler("Invalid credentials", 401));
     }
 
+    // Step 4: Compare password
+    const isPasswordValid = await user.comparePassword(password);
+    if (!isPasswordValid) {
+        return next(new ErrorHandler("Invalid credentials", 401));
+    }
+
+    // Step 5: Login successful
     sendToken(user, 200, "Login successful!", res);
 });
+
 
 // logout
 export const logout = CatchAsyncError(async (req, res, next) => {
