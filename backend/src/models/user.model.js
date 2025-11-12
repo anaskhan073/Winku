@@ -10,7 +10,7 @@ const userSchema = new mongoose.Schema({
         unique: true,
         default: ""
     },
-    name: {
+    fullname: {
         type: String,
         required: true,
     },
@@ -26,6 +26,10 @@ const userSchema = new mongoose.Schema({
     emailverificationCode: Number,
     emailverificationCodeExpire: {
         type: Date,
+    },
+    courntryCode: {
+        type: String,
+        default: "",
     },
     phone: {
         type: String,
@@ -62,7 +66,7 @@ const userSchema = new mongoose.Schema({
     },
     role: {
         type: String,
-        enum: ['user', 'creater', 'admin'],
+        enum: ['user', 'creator', 'admin'],
         default: 'user',
     },
     authProviders: {

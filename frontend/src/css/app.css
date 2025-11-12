@@ -29,7 +29,8 @@ body {
 h1,
 h2,
 h3,
-h4.h5,
+h4,
+h5,
 h6,
 p {
     margin: 0;
@@ -395,4 +396,45 @@ p {
 
 .back-button:hover {
     background-color: #e0e0e0;
+}
+
+
+.user-type-section {
+    margin: 24px 0;
+}
+
+.sale-type-options {
+    display: flex;
+    flex-direction: row;
+    width: 100%;
+    gap: 16px;
+}
+
+.sale-card {
+    padding: 20px;
+    width: 50%;
+    border-radius: 16px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    border: 2px solid var(--bg-dark);
+    background-color: var(--bg-light-gray);
+    color: var(--bg-dark);
+}
+
+.sale-card h4 {
+    font-size: 18px;
+    font-weight: 700;
+}
+
+.sale-card.active {
+    border: 2px solid var(--btn-bg-color);
+    background-color: var(--main-color);
+    color: var(--light);
+}
+
+.sale-card:not(.active):hover {
+    background-color: var(--light);
+    transform: translateY(-2px);
+    color: var(--bg-light-dark);
 }

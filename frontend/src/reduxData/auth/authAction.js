@@ -70,3 +70,31 @@ export const user_logout = async (dispatch, token) => {
         // check_token_expired_logout(error, dispatch);
     }
 };
+
+export const user_register = async (formData, dispatch) => {
+    try {
+        const urlPath = `${REACT_APP_BASE_URL}api/auth/register`;
+        const res = await axios.post(urlPath, formData);
+
+        if (res.data && res.data.success === true) {
+            console.log("Register response:", res);
+            localStorage.setItem("token", res.data.token);
+            dispatch({ type: AUTH_DETAIL, payload: res.data });
+            toast.success("Register Successful");
+            return res;
+        } else {
+            const errorMsg = res.data?.message || "Register failed";
+            toast.error(errorMsg);
+            return { error: errorMsg };
+        }
+    } catch (error) {
+        const errorMsg =
+            error.response?.data?.message ||
+            error.message ||
+            "Something went wrong";
+
+        // console.log("Register error:", error.response || error);
+        toast.error(errorMsg);
+        return { error: errorMsg };
+    }
+};

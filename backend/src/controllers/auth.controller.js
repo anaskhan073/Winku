@@ -12,17 +12,30 @@ const client = twilio(process.env.TWILIO_SID, process.env.TWILIO_AUTH_TOKEN)
 // sign up function 
 export const register = CatchAsyncError(async (req, res, next) => {
     try {
-        const { name, email, password, role } = req.body;
+        const { fullname, email, password, role, confirmPassword } = req.body;
 
-        if (!name) {
-            return next(new ErrorHandler("Name is Required.", 400));
+        if (!fullname) {
+            return next(new ErrorHandler("Full Name is Required.", 400));
         }
 
         if (!email) {
             return next(new ErrorHandler("Email is Required.", 400));
         }
+
         if (!password) {
             return next(new ErrorHandler("Password is Required.", 400));
+        }
+
+        if (!role) {
+            return next(new ErrorHandler("User Role is Required.", 400));
+        }
+
+        if (!confirmPassword) {
+            return next(new ErrorHandler("confirm Password is Required.", 400));
+        }
+
+        if (password != confirmPassword) {
+            return next(new ErrorHandler("Confirm Password Do Not Match.", 400));
         }
 
         // function validatePhoneNumber(phone) {
@@ -62,7 +75,7 @@ export const register = CatchAsyncError(async (req, res, next) => {
             );
         }
         const userData = {
-            name,
+            fullname,
             email,
             role,
             password,
@@ -72,12 +85,11 @@ export const register = CatchAsyncError(async (req, res, next) => {
         const emailverificationCode = user.generateemailVerificationCode();
         await user.save();
         emailsendVerificationCode(
-            "email",
             emailverificationCode,
-            name,
+            fullname,
             email,
             role,
-            res
+            res,
         );
     } catch (error) {
         next(error);
@@ -86,7 +98,6 @@ export const register = CatchAsyncError(async (req, res, next) => {
 
 // send verificationcode code
 async function emailsendVerificationCode(
-    verificationMethod,
     verificationCode,
     name,
     email,
@@ -94,24 +105,15 @@ async function emailsendVerificationCode(
     res
 ) {
     try {
-        if (verificationMethod === "email") {
-            await sendEmailOTP({
-                email,
-                verificationCode,
-                logo: "https://www.wpkixx.com/html/winku/images/logo.png",
-            });
-            return res.status(200).json({
-                success: true,
-                message: `Verification email successfully sent to ${name}`,
-            });
-        }
-
-        else {
-            return res.status(400).json({
-                success: false,
-                message: "Invalid verification method.",
-            });
-        }
+        await sendEmailOTP({
+            email,
+            verificationCode,
+            logo: "https://www.wpkixx.com/html/winku/images/logo.png",
+        });
+        return res.status(200).json({
+            success: true,
+            message: `Verification email successfully sent to ${name}`,
+        });
     } catch (error) {
         console.error("Email Error:", {
             message: error.message,
@@ -360,15 +362,18 @@ export const verifyOTP = CatchAsyncError(async (req, res, next) => {
 });
 
 
-
-
 // login 
 export const login = CatchAsyncError(async (req, res, next) => {
     const { emailOrPhone, password } = req.body;
 
-    if (!emailOrPhone || !password) {
-        return next(new ErrorHandler("Email/Phone & password required", 400));
+    if (!emailOrPhone) {
+        return next(new ErrorHandler("Email or Phone is required", 400));
     }
+
+    if (!password) {
+        return next(new ErrorHandler("Password is required", 400));
+    }
+
     let user = null;
     // Step 1: Try to find user by email
     user = await User.findOne({
@@ -424,6 +429,7 @@ export const logout = CatchAsyncError(async (req, res, next) => {
         });
 });
 
+
 // get user data
 export const getUser = CatchAsyncError(async (req, res, next) => {
     const user = req.user;
@@ -444,6 +450,7 @@ export const getUser = CatchAsyncError(async (req, res, next) => {
         },
     });
 });
+
 
 //forget password
 export const forgotPassword = CatchAsyncError(async (req, res, next) => {
@@ -485,6 +492,7 @@ export const forgotPassword = CatchAsyncError(async (req, res, next) => {
         );
     }
 });
+
 
 // reset password
 export const resetPassword = CatchAsyncError(async (req, res, next) => {
