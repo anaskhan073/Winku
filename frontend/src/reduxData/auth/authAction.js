@@ -25,7 +25,6 @@ export const login = async (data, dispatch) => {
         const res = await axios.post(urlPath, data);
 
         if (res.data && res.data.success === true) {
-            console.log("Login response:", res);
             localStorage.setItem("token", res.data.token);
             dispatch({ type: AUTH_DETAIL, payload: res.data });
             toast.success("Login Successful");
@@ -71,16 +70,14 @@ export const user_logout = async (dispatch, token) => {
     }
 };
 
-export const user_register = async (formData, dispatch) => {
+export const user_register = async (formData, dispatch, navigate) => {
     try {
         const urlPath = `${REACT_APP_BASE_URL}api/auth/register`;
         const res = await axios.post(urlPath, formData);
 
         if (res.data && res.data.success === true) {
-            console.log("Register response:", res);
-            localStorage.setItem("token", res.data.token);
-            dispatch({ type: AUTH_DETAIL, payload: res.data });
-            toast.success("Register Successful");
+            toast.success("Register Successful Please verify your email");
+            navigate("/email-verification", { state: { email: formData.email } });
             return res;
         } else {
             const errorMsg = res.data?.message || "Register failed";
@@ -98,3 +95,32 @@ export const user_register = async (formData, dispatch) => {
         return { error: errorMsg };
     }
 };
+
+export const email_otp_verify = async (otp, dispatch, navigate) => {
+    try {
+        const urlPath = `${REACT_APP_BASE_URL}api/auth/email-otp-verification`;
+        const res = await axios.post(urlPath, otp);
+
+        if (res.data && res.data.success === true) {
+            console.log("Login response:", res);
+            localStorage.setItem("token", res.data.token);
+            // dispatch({ type: AUTH_DETAIL, payload: res.data });
+            toast.success("Email verification successful");
+            return res;
+        } else {
+            const errorMsg = res.data?.message || "Email verification failed";
+            toast.error(errorMsg);
+            return { error: errorMsg };
+        }
+    } catch (error) {
+        const errorMsg =
+            error.response?.data?.message ||
+            error.message ||
+            "Something went wrong";
+
+        // console.log("Register error:", error.response || error);
+        toast.error(errorMsg);
+        return { error: errorMsg };
+    }
+};
+

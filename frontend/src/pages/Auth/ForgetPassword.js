@@ -65,7 +65,7 @@ const ForgetPassword = () => {
                         {/* Back Button */}
                         <div className="back-button-container">
                             <button onClick={handleBack} className="back-button">
-                                &larr; Backc
+                                &larr; Back
                             </button>
                         </div>
                         <div className='heading'>

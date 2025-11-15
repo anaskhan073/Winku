@@ -10,17 +10,20 @@ const Login = () => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
   const [showPassword, setShowPassword] = useState(false);
+  const [islogin, setIsLogin] = useState(false);
   const [formData, setFormData] = useState({
     emailOrPhone: "",
     password: "",
   });
 
   const handleSubmit = async (e) => {
+    setIsLogin(true);
     e.preventDefault();
     const response = login(formData, dispatch);
     if (response) {
       check_auth(dispatch);
     }
+    setIsLogin(false);
   };
 
 
@@ -59,7 +62,7 @@ const Login = () => {
 
                 <SocialLogin />
                 <div className="buttons flex gap-2">
-                  <button className="submit-btn">Login</button>
+                  <button className="submit-btn">{islogin ? 'Login...':'Login'}</button>
                   <Link to='/register' className='submit-btn'>Register</Link>
                 </div>
               </form>

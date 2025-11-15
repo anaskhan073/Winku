@@ -6,9 +6,11 @@ import { useDispatch } from "react-redux";
 import { user_register, check_auth } from "../../reduxData/auth/authAction";
 
 
+
 const Signup = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [showconfirmPassword, setShowConfirmPassword] = useState(false);
+  const [isSignup, setIsSignup] = useState(false);
   const navigate = useNavigate();
   const dispatch = useDispatch();
 
@@ -17,16 +19,15 @@ const Signup = () => {
     email: "",
     password: "",
     confirmPassword: "",
-    role: "user"
+    role: "user",
+    termsAccepted: false,
   });
 
   const handleSubmit = async (e) => {
-    console.log("Form Data Submitted:", formData);
+    setIsSignup(true);
     e.preventDefault();
-    const response = await user_register(formData, dispatch);
-    if (response) {
-      check_auth(dispatch);
-    }
+    await user_register(formData, dispatch, navigate);
+    setIsSignup(false);
   };
 
   return (
@@ -147,11 +148,17 @@ const Signup = () => {
 
               <div className="login-check">
                 <label className="remember-me">
-                  <input type="checkbox" required />
+                  <input
+                    type="checkbox"
+                    checked={formData.termsAccepted}
+                    onChange={(e) => setFormData({ ...formData, termsAccepted: e.target.checked })}
+                    required
+                  />
                   <span></span>
                   I agree with the Terms & Privacy Policy.
                 </label>
               </div>
+
 
               <SocialLogin />
 
@@ -160,7 +167,7 @@ const Signup = () => {
               </p>
 
               <div className="buttons flex gap-2">
-                <button onClick={handleSubmit} type="submit" className="submit-btn">Register</button>
+                <button onClick={handleSubmit} type="submit" className="submit-btn" >{isSignup ? 'Register...':'Register'}</button>
               </div>
             </form>
           </div>

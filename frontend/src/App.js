@@ -10,6 +10,7 @@ import Login from "./pages/Auth/Login";
 import Signup from "./pages/Auth/Signup";
 import ForgetPassword from "./pages/Auth/ForgetPassword";
 import ResetPassword from "./pages/Auth/ResetPassword";
+import EmailVerification from "./pages/Auth/EmailVerification";
 
 const App = () => {
   const dispatch = useDispatch();
@@ -29,6 +30,7 @@ const App = () => {
         <Route path="/register" element={islogin ? <Navigate to="/" replace /> : <Signup />} />
         <Route path="/forget-password" element={islogin ? <Navigate to="/" replace /> : <ForgetPassword />} />
         <Route path="/reset-password" element={islogin ? <Navigate to="/" replace /> : <ResetPassword />} />
+        <Route path="/email-verification" element={islogin ? <Navigate to="/" replace /> : <EmailVerification />} />
         <Route path="*" element={<Navigate to={islogin ? "/" : "/login"} replace />} />,
 
         {/* after login */}
