@@ -1,6 +1,6 @@
 import React from 'react';
 import Logo from '../../images/authenctication/friendlylogo.png';
-
+import SocialLogin from "../../components/auth/SocialLogin";
 
 const Authsidescreen = () => {
   return (
@@ -28,6 +28,8 @@ const Authsidescreen = () => {
             <span className="icon">X</span>
           </a>
         </div>
+
+        <SocialLogin />
       </div>
     </>
   );

@@ -9,59 +9,159 @@ import crypto from 'crypto';
 
 const client = twilio(process.env.TWILIO_SID, process.env.TWILIO_AUTH_TOKEN)
 
+// register
+// export const register = CatchAsyncError(async (req, res, next) => {
+//     const { fullname, email, password, confirmPassword, role, termsAccepted } = req.body;
+
+//     // Validations
+//     if (!fullname?.trim()) return next(new ErrorHandler("Full Name is required.", 400));
+//     if (!email?.trim()) return next(new ErrorHandler("Email is required.", 400));
+
+//     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+//     if (!emailRegex.test(email)) return next(new ErrorHandler("Invalid email format.", 400));
+
+//     if (!password) return next(new ErrorHandler("Password is required.", 400));
+//     if (password.length < 6) return next(new ErrorHandler("Password must be at least 6 characters.", 400));
+//     if (password !== confirmPassword) return next(new ErrorHandler("Passwords do not match.", 400));
+//     if (!role || !['user', 'creator', 'admin'].includes(role)) {
+//         return next(new ErrorHandler("Valid role is required.", 400));
+//     }
+//     if (!termsAccepted) return next(new ErrorHandler("You must accept terms and conditions.", 400));
+
+//     // Check if email already verified
+//     const existingVerifiedUser = await User.findOne({ email, emailVerified: true });
+//     if (existingVerifiedUser) {
+//         return next(new ErrorHandler("Email is already registered and verified.", 400));
+//     }
+
+//     // Rate limit unverified attempts
+//     const unverifiedAttempts = await User.countDocuments({
+//         email,
+//         emailVerified: false
+//     });
+
+//     if (unverifiedAttempts >= 3) {
+//         return next(new ErrorHandler("Too many registration attempts. Try again later.", 429));
+//     }
+
+//     // Create user
+//     const user = await User.create({
+//         fullname,
+//         email: email.toLowerCase().trim(),
+//         password,
+//         role,
+//         termsAccepted
+//     });
+
+//     // Generate & save OTP
+//     const verificationCode = user.generateemailVerificationCode();
+//     await user.save({ validateBeforeSave: false });
+
+//     // Send OTP Email
+//     await emailsendVerificationCode(verificationCode, fullname, email, role, res);
+
+//     // Optional: You can send JWT here if you want auto-login after email verification
+//     // sendToken(user, 201, res);
+// });
+
+// register controller - STRONG PASSWORD VALIDATION
 export const register = CatchAsyncError(async (req, res, next) => {
     const { fullname, email, password, confirmPassword, role, termsAccepted } = req.body;
 
-    // Validations
+    // === Basic Required Fields ===
     if (!fullname?.trim()) return next(new ErrorHandler("Full Name is required.", 400));
+
     if (!email?.trim()) return next(new ErrorHandler("Email is required.", 400));
 
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) return next(new ErrorHandler("Invalid email format.", 400));
 
     if (!password) return next(new ErrorHandler("Password is required.", 400));
-    if (password.length < 6) return next(new ErrorHandler("Password must be at least 6 characters.", 400));
-    if (password !== confirmPassword) return next(new ErrorHandler("Passwords do not match.", 400));
+
+    // === STRONG PASSWORD VALIDATION ===
+    if (password.length < 8) {
+        return next(new ErrorHandler("Password must be at least 8 characters long.", 400));
+    }
+
+    if (!/[A-Z]/.test(password)) {
+        return next(new ErrorHandler("Password must contain at least one uppercase letter.", 400));
+    }
+
+    if (!/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?~]/.test(password)) {
+        return next(new ErrorHandler("Password must contain at least one special character.", 400));
+    }
+
+    if (!/[0-9]/.test(password)) {
+        return next(new ErrorHandler("Password must contain at least one number.", 400));
+    }
+
+    if (!confirmPassword) return next(new ErrorHandler("Confirm Password is required.", 400));
+
+    if (password !== confirmPassword) {
+        return next(new ErrorHandler("Passwords do not match.", 400));
+    }
+
+    // === Role Validation ===
     if (!role || !['user', 'creator', 'admin'].includes(role)) {
-        return next(new ErrorHandler("Valid role is required.", 400));
+        return next(new ErrorHandler("Valid role is required (user/creator).", 400));
     }
-    if (!termsAccepted) return next(new ErrorHandler("You must accept terms and conditions.", 400));
 
-    // Check if email already verified
-    const existingVerifiedUser = await User.findOne({ email, emailVerified: true });
+    // === Terms Acceptance ===
+    if (termsAccepted !== true) {
+        return next(new ErrorHandler("You must accept the Terms & Privacy Policy.", 400));
+    }
+
+    // === Check if email already registered & verified ===
+    const existingVerifiedUser = await User.findOne({ email: email.toLowerCase(), emailVerified: true });
     if (existingVerifiedUser) {
-        return next(new ErrorHandler("Email is already registered and verified.", 400));
+        return next(new ErrorHandler("This email is already registered and verified.", 409));
     }
 
-    // Rate limit unverified attempts
-    const unverifiedAttempts = await User.countDocuments({
-        email,
+    // === Rate limiting unverified accounts (optional but smart) ===
+    const unverifiedCount = await User.countDocuments({
+        email: email.toLowerCase(),
         emailVerified: false
     });
-
-    if (unverifiedAttempts >= 3) {
-        return next(new ErrorHandler("Too many registration attempts. Try again later.", 429));
+    if (unverifiedCount >= 3) {
+        return next(new ErrorHandler("Too many pending registrations. Please check your email or try again later.", 429));
     }
 
-    // Create user
+    // === Create User ===
     const user = await User.create({
-        fullname,
+        fullname: fullname.trim(),
         email: email.toLowerCase().trim(),
-        password,
+        password, // will be hashed by pre-save middleware
         role,
-        termsAccepted
+        termsAccepted: true
     });
 
-    // Generate & save OTP
+    // === Generate OTP for email verification ===
     const verificationCode = user.generateemailVerificationCode();
     await user.save({ validateBeforeSave: false });
 
-    // Send OTP Email
-    await emailsendVerificationCode(verificationCode, fullname, email, role, res);
+    // === Send Verification Email ===
+    try {
+        await emailsendVerificationCode(verificationCode, fullname, email, role);
+    } catch (error) {
+        user.emailVerificationCode = undefined;
+        user.emailVerificationExpire = undefined;
+        await user.save({ validateBeforeSave: false });
+        return next(new ErrorHandler("Failed to send verification email. Try again.", 500));
+    }
 
-    // Optional: You can send JWT here if you want auto-login after email verification
-    // sendToken(user, 201, res);
+    // === Success Response ===
+    return res.status(201).json({
+        success: true,
+        message: "Registration successful! Please check your email to verify your account.",
+        user: {
+            id: user._id,
+            fullname: user.fullname,
+            email: user.email,
+            role: user.role
+        }
+    });
 });
+
 
 // send verificationcode code
 async function emailsendVerificationCode(
@@ -77,6 +177,7 @@ async function emailsendVerificationCode(
             verificationCode,
             logo: "https://www.wpkixx.com/html/winku/images/logo.png",
         });
+        console.log("Email sent successfully222", email, verificationCode);
         return res.status(200).json({
             success: true,
             message: `Verification email successfully sent to ${name}`,
@@ -95,6 +196,76 @@ async function emailsendVerificationCode(
     }
 }
 
+// resend OTP
+export const resendEmailOTP = CatchAsyncError(async (req, res, next) => {
+    const { email } = req.body;
+
+    // === INPUT VALIDATION ===
+    if (!email?.trim()) {
+        return next(new ErrorHandler("Email is required.", 400));
+    }
+
+    const normalizedEmail = email.trim().toLowerCase();
+
+    // === CHECK IF ALREADY VERIFIED ===
+    const verifiedUser = await User.findOne({
+        email: normalizedEmail,
+        emailVerified: true
+    });
+
+    if (verifiedUser) {
+        return next(new ErrorHandler("Email is already verified. No need to resend OTP.", 400));
+    }
+
+    // === FIND LATEST UNVERIFIED USER ===
+    const user = await User.findOne({
+        email: normalizedEmail,
+        emailVerified: false
+    }).sort({ createdAt: -1 });
+
+    if (!user) {
+        return next(new ErrorHandler("No registration found. Please register first.", 404));
+    }
+
+    // === RATE LIMIT: Max 3 resends per user (customize as needed) ===
+    const recentOTPs = await User.countDocuments({
+        email: normalizedEmail,
+        emailVerified: false,
+        emailverificationCodeExpire: { $gt: Date.now() - 2 * 60 * 1000 } // Last 2 mins
+    });
+
+    if (recentOTPs >= 3) {
+        return next(new ErrorHandler("Too many OTP requests. Please try again after 2 minutes.", 429));
+    }
+
+    // === GENERATE NEW OTP ===
+    const newVerificationCode = user.generateemailVerificationCode();
+    await user.save({ validateBeforeSave: false });
+
+    // === SEND OTP VIA EMAIL ===
+    try {
+        await sendEmailOTP({
+            email: normalizedEmail,
+            verificationCode: newVerificationCode,
+            logo: "https://www.wpkixx.com/html/winku/images/logo.png",
+        });
+
+        return res.status(200).json({
+            success: true,
+            message: "New verification code sent successfully.",
+        });
+    } catch (error) {
+        // Cleanup on failure
+        user.emailverificationCode = undefined;
+        user.emailverificationCodeExpire = undefined;
+        await user.save({ validateBeforeSave: false });
+
+        console.error("Resend OTP Email Error:", error);
+        return next(new ErrorHandler("Failed to send OTP. Please try again.", 500));
+    }
+});
+
+// send phone verification code
 async function phonesendVerificationCode(
     verificationMethod,
     verificationCode,
@@ -156,6 +327,7 @@ async function phonesendVerificationCode(
         });
     }
 }
+
 
 // verify code 
 export const emailverifyOTP = CatchAsyncError(async (req, res, next) => {
@@ -237,6 +409,7 @@ export const emailverifyOTP = CatchAsyncError(async (req, res, next) => {
         return next(new ErrorHandler("Verification failed. Please try again.", 500));
     }
 });
+
 
 // email verify code
 export const verifyOTP = CatchAsyncError(async (req, res, next) => {
@@ -342,6 +515,7 @@ export const login = CatchAsyncError(async (req, res, next) => {
     }
 
     let user = null;
+
     // Step 1: Try to find user by email
     user = await User.findOne({
         email: emailOrPhone,
@@ -352,7 +526,7 @@ export const login = CatchAsyncError(async (req, res, next) => {
     if (!user) {
         user = await User.findOne({
             phone: emailOrPhone,
-            phoneVerified: true,     // Must be verified
+            phoneVerified: true,
             emailVerified: true
         }).select("+password");
 
@@ -421,9 +595,18 @@ export const getUser = CatchAsyncError(async (req, res, next) => {
 
 //forget password
 export const forgotPassword = CatchAsyncError(async (req, res, next) => {
+    const { email } = req.body;
+
+    if (!email) {
+        return next(new ErrorHandler("Email is required.", 400));
+    }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) return next(new ErrorHandler("Invalid email format.", 400));
+
     const user = await User.findOne({
-        email: req.body.email,
-        accountVerified: true,
+        email: email,
+        emailVerified: true,
     });
 
     if (!user) {
@@ -432,19 +615,19 @@ export const forgotPassword = CatchAsyncError(async (req, res, next) => {
 
     const resetToken = await user.generateResetPasswordToken();
     await user.save({ validateBeforeSave: false });
-    const resetPasswordUrl = `${process.env.FRONTEND_URL}/password/reset/${resetToken}`;
-    const message = `Your Reset Password is:- \n\n ${resetPasswordUrl} \n\n If you have not requested this email then please ignore it.`;
+    const resetPasswordUrl = `${process.env.FRONTEND_URL}/reset-password?token=${resetToken}`;
+    // const message = `Your Reset Password is:- \n\n ${resetPasswordUrl} \n\n If you have not requested this email then please ignore it.`;
 
     try {
         await ForgetPasswordEmail({
             email: user.email,
-            message,
+            resetPasswordUrl,
             logo: "https://www.wpkixx.com/html/winku/images/logo.png",
         });
 
         res.status(200).json({
             success: true,
-            message: `Email sent to ${user.email} successfully.`,
+            message: `Password reset link sent to your email ${user.email}.`,
         });
     } catch (error) {
         user.resetPasswordToken = undefined;
@@ -464,18 +647,28 @@ export const forgotPassword = CatchAsyncError(async (req, res, next) => {
 // reset password
 export const resetPassword = CatchAsyncError(async (req, res, next) => {
     const { token } = req.params;
+    const { password, confirmPassword } = req.body;
+
+    if (!password) {
+        return next(new ErrorHandler("Password is required.", 400));
+    }
+    if (password.length < 6) {
+        return next(new ErrorHandler("Password must be at least 6 characters.", 400));
+    }
+    if (!confirmPassword) {
+        return next(new ErrorHandler("Confirm Password is required.", 400));
+    }
+    if (password !== confirmPassword) {
+        return next(new ErrorHandler("Passwords do not match.", 400));
+    }
+
     const resetPasswordToken = crypto.createHash("sha256").update(token).digest("hex");
     const user = await User.findOne({
         resetPasswordToken,
         resetPasswordExpire: { $gt: Date.now() },
     })
-    console.log("resetPasswordToken", resetPasswordToken)
-    console.log("user", user)
     if (!user) {
-        return next(new ErrorHandler("Reset password token or has been expired.", 400))
-    }
-    if (req.body.password !== req.body.confirmPassword) {
-        return next(new ErrorHandler("Password & Confirm Password do not match.", 400));
+        return next(new ErrorHandler("User Not Found! Try again", 400))
     }
 
     user.password = req.body.password;
@@ -485,6 +678,8 @@ export const resetPassword = CatchAsyncError(async (req, res, next) => {
     sendToken(user, 200, "Reset Password Successfully.", res);
 });
 
+
+// check auth
 export const checkAuth = (req, res) => {
     const token = req.cookies?.token;
 
@@ -515,3 +710,4 @@ export const checkAuth = (req, res) => {
         res.json({ success: true, authenticated: false });
     }
 };
+

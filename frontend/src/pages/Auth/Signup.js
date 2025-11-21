@@ -1,11 +1,8 @@
 import { useState } from "react";
 import Authsidescreen from "../../components/auth/Authsidescreen";
 import { Link, useNavigate } from "react-router-dom";
-import SocialLogin from "../../components/auth/SocialLogin";
 import { useDispatch } from "react-redux";
 import { user_register, check_auth } from "../../reduxData/auth/authAction";
-
-
 
 const Signup = () => {
   const [showPassword, setShowPassword] = useState(false);
@@ -22,6 +19,40 @@ const Signup = () => {
     role: "user",
     termsAccepted: false,
   });
+
+  const [passwordStrength, setPasswordStrength] = useState({
+    score: 0,
+    label: "Weak",
+    color: "bg-red-500",
+  });
+
+  // Add this function inside your component
+  const checkPasswordStrength = (password) => {
+    let score = 0;
+    const checks = {
+      length: password.length >= 8,
+      uppercase: /[A-Z]/.test(password),
+      number: /[0-9]/.test(password),
+      special: /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(password),
+    };
+
+    if (checks.length) score += 25;
+    if (checks.uppercase) score += 25;
+    if (checks.number) score += 25;
+    if (checks.special) score += 25;
+
+    let label = "Weak";
+    let color = "bg-red-500";
+
+    if (score >= 100) { label = "Strong"; color = "bg-green-500"; }
+    else if (score >= 75) { label = "Good"; color = "bg-lime-500"; }
+    else if (score >= 50) { label = "Medium"; color = "bg-orange-500"; }
+    else if (score >= 25) { label = "Weak"; color = "bg-yellow-500"; }
+
+    setPasswordStrength({ score, label, color });
+  };
+
+
 
   const handleSubmit = async (e) => {
     setIsSignup(true);
@@ -84,7 +115,11 @@ const Signup = () => {
                   id="password"
                   placeholder=" "
                   value={formData.password}
-                  onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                  // onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                  onChange={(e) => {
+                    setFormData({ ...formData, password: e.target.value });
+                    checkPasswordStrength(e.target.value);
+                  }}
                 />
                 {showPassword ? (
                   <svg onClick={() => setShowPassword(false)} className="cursor-pointer icon" xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24">
@@ -101,6 +136,62 @@ const Signup = () => {
                   </svg>
                 )}
                 <label htmlFor="password">Password</label>
+
+                {/* Password Strength Progress Bar */}
+                {formData.password && (
+                  <div className="mt-4 mb-5">
+                    {/* Header */}
+                    <div className="flex justify-between items-center mb-2 text-sm">
+                      <span className="text-gray-600 font-medium">Password Strength</span>
+                      <span className={`font-bold ${passwordStrength.color.replace('bg-', 'text-')}`}>
+                        {passwordStrength.label}
+                      </span>
+                    </div>
+
+                    {/* Progress Bar */}
+                    <div className="w-full bg-gray-300 rounded-full h-3 overflow-hidden shadow-inner">
+                      <div
+                        className={`h-full rounded-full transition-all duration-500 ease-out ${passwordStrength.color}`}
+                        style={{ width: `${passwordStrength.score}%` }}
+                      />
+                    </div>
+
+                    {/* Live Requirements Feedback */}
+                    <div className="mt-3 grid grid-cols-1 gap-1.5 text-xs">
+                      <div className="flex items-center gap-2">
+                        {formData.password.length >= 8 ? (
+                          <span className="text-green-600">Minimum 8 characters</span>
+                        ) : (
+                          <span className="text-red-500">Minimum 8 characters</span>
+                        )}
+                      </div>
+
+                      <div className="flex items-center gap-2">
+                        {/[A-Z]/.test(formData.password) ? (
+                          <span className="text-green-600">One uppercase letter</span>
+                        ) : (
+                          <span className="text-red-500">One uppercase letter</span>
+                        )}
+                      </div>
+
+                      <div className="flex items-center gap-2">
+                        {/[0-9]/.test(formData.password) ? (
+                          <span className="text-green-600">One number</span>
+                        ) : (
+                          <span className="text-red-500">One number</span>
+                        )}
+                      </div>
+
+                      <div className="flex items-center gap-2">
+                        {/[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]/.test(formData.password) ? (
+                          <span className="text-green-600">One special character</span>
+                        ) : (
+                          <span className="text-red-500">One special character</span>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
 
               <div className="input-wrapper">
@@ -160,14 +251,14 @@ const Signup = () => {
               </div>
 
 
-              <SocialLogin />
+
 
               <p className="mb-2">
                 Already have an account? <Link to="/login" className="blue-a">Login</Link>
               </p>
 
               <div className="buttons flex gap-2">
-                <button onClick={handleSubmit} type="submit" className="submit-btn" >{isSignup ? 'Register...':'Register'}</button>
+                <button onClick={handleSubmit} type="submit" className="submit-btn" >{isSignup ? 'Register...' : 'Register'}</button>
               </div>
             </form>
           </div>
@@ -178,3 +269,6 @@ const Signup = () => {
 };
 
 export default Signup;
+
+
+

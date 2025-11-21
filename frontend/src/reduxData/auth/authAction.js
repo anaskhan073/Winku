@@ -19,6 +19,7 @@ export const check_auth = async (dispatch) => {
     }
 };
 
+
 export const login = async (data, dispatch) => {
     try {
         const urlPath = `${REACT_APP_BASE_URL}api/auth/login`;
@@ -70,6 +71,7 @@ export const user_logout = async (dispatch, token) => {
     }
 };
 
+
 export const user_register = async (formData, dispatch, navigate) => {
     try {
         const urlPath = `${REACT_APP_BASE_URL}api/auth/register`;
@@ -96,6 +98,7 @@ export const user_register = async (formData, dispatch, navigate) => {
     }
 };
 
+
 export const email_otp_verify = async (otp, dispatch, navigate) => {
     try {
         const urlPath = `${REACT_APP_BASE_URL}api/auth/email-otp-verification`;
@@ -119,6 +122,76 @@ export const email_otp_verify = async (otp, dispatch, navigate) => {
             "Something went wrong";
 
         // console.log("Register error:", error.response || error);
+        toast.error(errorMsg);
+        return { error: errorMsg };
+    }
+};
+
+
+export const resend_email_otp = async (email, dispatch) => {
+    try {
+        const urlPath = `${REACT_APP_BASE_URL}api/auth/resend-email-otp`;
+        const res = await axios.post(urlPath, { email });
+        if (res.data && res.data.success === true) {
+            toast.success(res.data.message || "OTP resent successfully");
+            return res;
+        }
+    } catch (error) {
+        const errorMsg =
+            error.response?.data?.message ||
+            error.message ||
+            "Something went wrong";
+        toast.error(errorMsg);
+        return { error: errorMsg };
+    }
+};
+
+
+export const forget_password = async (data, dispatch, navigate) => {
+    try {
+        const urlPath = `${REACT_APP_BASE_URL}api/auth/forget-password`;
+        const res = await axios.post(urlPath, data);
+        if (res.data && res.data.success === true) {
+            navigate("/", { state: { email: data.email } });
+            toast.success(res.data.message || "Password reset link sent to your email");
+            return res;
+
+        }
+
+    } catch (error) {
+        const errorMsg =
+            error.response?.data?.message ||
+            error.message ||
+            "Something went wrong";
+        toast.error(errorMsg);
+        return { error: errorMsg };
+    }
+
+}
+
+
+export const reset_password = async (data, token, dispatch) => {
+    try {
+        const urlPath = `${REACT_APP_BASE_URL}api/auth/reset-password/${token}`;
+        const res = await axios.put(urlPath, data);
+
+        if (res.data && res.data.success === true) {
+            localStorage.setItem("token", res.data.token);
+            dispatch({ type: AUTH_DETAIL, payload: res.data });
+            toast.success("Login Successful");
+            return res;
+        } else {
+            const errorMsg = res.data?.message || "Login failed";
+            toast.error(errorMsg);
+            return { error: errorMsg };
+        }
+    } catch (error) {
+        const errorMsg =
+            error.response?.data?.message ||
+            error.message ||
+            "Something went wrong";
+
+        // console.log("Login error:", error.response || error);
         toast.error(errorMsg);
         return { error: errorMsg };
     }

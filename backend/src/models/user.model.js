@@ -29,10 +29,10 @@ const userSchema = new mongoose.Schema({
     },
     courntryCode: {
         type: String,
-        default: "",
     },
     phone: {
         type: String,
+        default: null,
     },
     phoneVerified: {
         type: Boolean,
@@ -44,6 +44,7 @@ const userSchema = new mongoose.Schema({
     },
     password: {
         type: String,
+        required: true,
         minlength: 6,
         select: false,
     },
@@ -90,16 +91,11 @@ const userSchema = new mongoose.Schema({
     { timestamps: true }
 );
 
-
 userSchema.pre("save", async function (next) {
     // Normalize email & phone
     if (this.email) {
         this.email = this.email.trim().toLowerCase();
     }
-    // if (this.phone) {
-    //     this.phone = this.phone.trim();
-    // }
-
     // Generate username if not exists
     if (!this.username || this.username.trim() === "") {
         const emailPart = this.email ? this.email.split("@")[0] : "user";
@@ -129,6 +125,7 @@ userSchema.methods.comparePassword = async function (enteredPassword) {
     return await bcrypt.compare(enteredPassword, this.password);
 };
 
+
 userSchema.methods.generateemailVerificationCode = function () {
     function generateRandomFiveDigitNumber() {
         const firstDigit = Math.floor(Math.random() * 9) + 1;
@@ -137,25 +134,29 @@ userSchema.methods.generateemailVerificationCode = function () {
             .padStart(4, 0);
         return parseInt(firstDigit + remainingDigits);
     }
+
     const emailverificationCode = generateRandomFiveDigitNumber();
     this.emailverificationCode = emailverificationCode;
     this.emailverificationCodeExpire = Date.now() + 10 * 60 * 1000;
     return emailverificationCode;
 };
 
-userSchema.methods.generatephoneVerificationCode = function () {
-    function generateRandomFiveDigitNumber() {
-        const firstDigit = Math.floor(Math.random() * 9) + 1;
-        const remainingDigits = Math.floor(Math.random() * 10000)
-            .toString()
-            .padStart(4, 0);
-        return parseInt(firstDigit + remainingDigits);
-    }
-    const phoneverificationCode = generateRandomFiveDigitNumber();
-    this.phoneverificationCode = phoneverificationCode;
-    this.phoneverificationCodeExpire = Date.now() + 10 * 60 * 1000;
-    return phoneverificationCode;
-};
+// userSchema.methods.generatephoneVerificationCode = function () {
+//     function generateRandomFiveDigitNumber() {
+//         const firstDigit = Math.floor(Math.random() * 9) + 1;
+//         const remainingDigits = Math.floor(Math.random() * 10000)
+//             .toString()
+//             .padStart(4, 0);
+//         return parseInt(firstDigit + remainingDigits);
+//     }
+
+//     const phoneverificationCode = generateRandomFiveDigitNumber();
+
+//     this.phoneverificationCode = phoneverificationCode;
+
+//     this.phoneverificationCodeExpire = Date.now() + 10 * 60 * 1000;
+//     return phoneverificationCode;
+// };
 
 userSchema.methods.generateToken = async function () {
     return jwt.sign({ id: this._id }, process.env.JWT_SECRET_KEY, {
@@ -163,7 +164,8 @@ userSchema.methods.generateToken = async function () {
     });
 };
 
-userSchema.methods.generateResetPasswordToken = async function(){
+
+userSchema.methods.generateResetPasswordToken = async function () {
     const resetToken = crypto.randomBytes(20).toString("hex");
     this.resetPasswordToken = crypto.createHash("sha256").update(resetToken).digest("hex");
     this.resetPasswordExpire = Date.now() + 15 * 60 * 1000;

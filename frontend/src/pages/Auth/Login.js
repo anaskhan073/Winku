@@ -1,7 +1,6 @@
 import { useState, useEffect } from "react";
 import Authsidescreen from '../../components/auth/Authsidescreen'
 import { Link, useNavigate } from "react-router-dom";
-import SocialLogin from "../../components/auth/SocialLogin";
 import { login, check_auth } from "../../reduxData/auth/authAction";
 import { useDispatch, useSelector } from "react-redux";
 
@@ -44,6 +43,7 @@ const Login = () => {
                   <svg xmlns="http://www.w3.org/2000/svg" className="icon" width={30} height={30} viewBox="0 0 24 24"><g fill="none" stroke="currentColor" strokeWidth={1.5}><path d="M2 12c0-3.771 0-5.657 1.172-6.828S6.229 4 10 4h4c3.771 0 5.657 0 6.828 1.172S22 8.229 22 12s0 5.657-1.172 6.828S17.771 20 14 20h-4c-3.771 0-5.657 0-6.828-1.172S2 15.771 2 12Z"></path><path strokeLinecap="round" d="m6 8l2.159 1.8c1.837 1.53 2.755 2.295 3.841 2.295s2.005-.765 3.841-2.296L18 8"></path></g></svg>
                   <label htmlFor="emailOrPhone">Email or Phone</label>
                 </div>
+                
                 <div className="input-wrapper">
                   <input type={showPassword ? "text" : "password"} id="password" placeholder=" " value={formData.password} onChange={(e) => setFormData({ ...formData, password: e.target.value })} />
                   {showPassword ? <svg onClick={() => setShowPassword(!showPassword)} className='cursor-pointer icon' xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24"><g fill="none" stroke="currentColor"><path strokeWidth="1.5" d="M2 16c0-2.828 0-4.243.879-5.121C3.757 10 5.172 10 8 10h8c2.828 0 4.243 0 5.121.879C22 11.757 22 13.172 22 16s0 4.243-.879 5.121C20.243 22 18.828 22 16 22H8c-2.828 0-4.243 0-5.121-.879C2 20.243 2 18.828 2 16Z" /><path strokeLinecap="round" strokeWidth="1.5" d="M6 10V8a6 6 0 0 1 11.811-1.5" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 16h.009m3.982 0H12m3.991 0H16" /></g></svg>
@@ -60,7 +60,7 @@ const Login = () => {
                   <Link to='/forget-password'>Forget Password?</Link>
                 </div>
 
-                <SocialLogin />
+                
                 <div className="buttons flex gap-2">
                   <button className="submit-btn">{islogin ? 'Login...':'Login'}</button>
                   <Link to='/register' className='submit-btn'>Register</Link>

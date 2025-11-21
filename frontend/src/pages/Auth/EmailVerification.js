@@ -1,14 +1,14 @@
 import { useState, useRef, useEffect } from "react";
 import Authsidescreen from "../../components/auth/Authsidescreen";
 import { Link, useNavigate, useLocation } from "react-router-dom";
-import SocialLogin from "../../components/auth/SocialLogin";
 import { useDispatch } from "react-redux";
-import { check_auth, email_otp_verify } from "../../reduxData/auth/authAction";
-
+import { check_auth, email_otp_verify, resend_email_otp } from "../../reduxData/auth/authAction";
+import { useResendTimer } from "../../hooks/useResendTimer";
 
 const EmailVerification = () => {
     const [otp, setOtp] = useState(["", "", "", "", ""]);
     const [isLoading, setIsLoading] = useState(false);
+    const { remaining, isDisabled, start } = useResendTimer(60);
     const inputRefs = useRef([]);
     const navigate = useNavigate();
     const dispatch = useDispatch();
@@ -30,6 +30,37 @@ const EmailVerification = () => {
             inputRefs.current[index + 1]?.focus();
         }
     };
+
+    // const handleResend = async () => {
+    //     setIsLoading(true);
+    //     await resend_email_otp(email, dispatch);
+    //     setIsLoading(false);
+    // };
+
+
+    const handleResend = async () => {
+        if (isDisabled) return;
+
+        setIsLoading(true);
+        try {
+            await resend_email_otp(email, dispatch);
+            start();                     // start the 60-second cooldown
+        } catch (e) {
+            console.error(e);
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    const btnText = (() => {
+        if (isLoading) return 'Resend OTP...';
+        if (remaining > 0) {
+            const mins = Math.floor(remaining / 60);
+            const secs = (remaining % 60).toString().padStart(2, '0');
+            return `Resend in ${mins}:${secs}`;
+        }
+        return 'Resend OTP';
+    })();
 
     const handleKeyDown = (index, e) => {
         if (e.key === "Backspace" && !otp[index] && index > 0) {
@@ -107,12 +138,13 @@ const EmailVerification = () => {
                                 Didn't receive it?{" "}
                                 <button
                                     type="button"
-                                    // onClick={handleResend}
-                                    disabled={isLoading}
-                                    className="resend-link"
+                                    onClick={handleResend}
+                                    disabled={remaining > 0 || isLoading}
+                                    className={`resend-link ${remaining > 0 || !isLoading && 'resend-link-hover'}`}
                                 >
-                                    Resend OTP
-                                </button>
+                                    {/* {isLoading ? "Resend OTP..." : "Resend OTP"} */}                                    
+                                    {btnText}
+                                    </button>
                             </p>
 
                             <div className="buttons">
@@ -122,6 +154,7 @@ const EmailVerification = () => {
                                     className="submit-btn"
                                 >
                                     {isLoading ? "Verifying..." : "Verify Otp"}
+
                                 </button>
                             </div>
                         </form>
