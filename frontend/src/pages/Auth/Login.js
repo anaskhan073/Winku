@@ -29,7 +29,7 @@ const Login = () => {
   return (
     <>
       <div className="authenctication-section">
-        <Authsidescreen />
+        <Authsidescreen socialuse={"Login"} />
         <div className="formside">
           <div className="form-box">
             <div className='heading'>

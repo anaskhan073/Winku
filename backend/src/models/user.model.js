@@ -55,7 +55,7 @@ const userSchema = new mongoose.Schema({
     resetPasswordExpire: {
         type: Date
     },
-    profilePic: {
+    avatar: {
         type: String,
         default: "",
     },
@@ -68,7 +68,11 @@ const userSchema = new mongoose.Schema({
         enum: ['user', 'creator', 'admin'],
         default: 'user',
     },
-    authProviders: {
+    provider: {
+        type: String,
+        default: "",
+    },
+    providerId: {
         type: String,
         default: "",
     },

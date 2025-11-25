@@ -63,7 +63,7 @@ const Signup = () => {
 
   return (
     <div className="authenctication-section">
-      <Authsidescreen />
+      <Authsidescreen socialuse={"Register"} />
       <div className="formside">
         <div className="form-box">
           <div className="heading">

@@ -467,11 +467,20 @@ p {
     }
 }
 
+.social-login-section {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 15px;
+}
 
+.social-login-btn:active {
+    transform: none !important;
+    border: none !important;
+}
 .social-login-btns {
     display: flex;
     flex-direction: row;
-    margin-top: 30px;
     gap: 40px;
 }
 

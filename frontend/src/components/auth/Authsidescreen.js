@@ -2,7 +2,7 @@ import React from 'react';
 import Logo from '../../images/authenctication/friendlylogo.png';
 import SocialLogin from "../../components/auth/SocialLogin";
 
-const Authsidescreen = () => {
+const Authsidescreen = ({ socialuse }) => {
   return (
     <>
       <div className="authsidescreen">
@@ -29,7 +29,13 @@ const Authsidescreen = () => {
           </a>
         </div>
 
-        <SocialLogin />
+
+        {socialuse &&
+          <div className='social-login-section'>
+            <p> {socialuse} With </p>
+            <SocialLogin />
+          </div>
+        }
       </div>
     </>
   );
