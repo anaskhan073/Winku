@@ -1,6 +1,6 @@
 import axios from "axios";
 import { toast } from "react-hot-toast";
-import { IS_LOGIN, AUTH_DETAIL, TOKENS_UPDATE } from "./authTypes";
+import { IS_LOGIN, AUTH_DETAIL, TOKENS_UPDATE, USERDETAIL } from "./authTypes";
 
 const { REACT_APP_BASE_URL } = process.env;
 
@@ -18,7 +18,6 @@ export const check_auth = async (dispatch) => {
         return null;
     }
 };
-
 
 export const login = async (data, dispatch) => {
     try {
@@ -47,7 +46,6 @@ export const login = async (data, dispatch) => {
     }
 };
 
-
 export const user_logout = async (dispatch, token) => {
     try {
         const urlPath = `${REACT_APP_BASE_URL}auth/logout`;
@@ -71,6 +69,30 @@ export const user_logout = async (dispatch, token) => {
     }
 };
 
+export const get_user = async (dispatch) => {
+    try {
+        const urlPath = `${REACT_APP_BASE_URL}api/auth/get-user`;
+        const res = await axios.get(urlPath);
+
+        if (res.data && res.data.success === true) {
+            dispatch({ type: USERDETAIL, payload: res.data });
+            return res;
+        } else {
+            const errorMsg = res.data?.message;
+            toast.error(errorMsg);
+            return { error: errorMsg };
+        }
+    } catch (error) {
+        const errorMsg =
+            error.response?.data?.message ||
+            error.message ||
+            "Something went wrong";
+
+        // console.log("Login error:", error.response || error);
+        toast.error(errorMsg);
+        return { error: errorMsg };
+    }
+}
 
 export const user_register = async (formData, dispatch, navigate) => {
     try {
@@ -97,7 +119,6 @@ export const user_register = async (formData, dispatch, navigate) => {
         return { error: errorMsg };
     }
 };
-
 
 export const email_otp_verify = async (otp, dispatch, navigate) => {
     try {
@@ -127,7 +148,6 @@ export const email_otp_verify = async (otp, dispatch, navigate) => {
     }
 };
 
-
 export const resend_email_otp = async (email, dispatch) => {
     try {
         const urlPath = `${REACT_APP_BASE_URL}api/auth/resend-email-otp`;
@@ -146,7 +166,6 @@ export const resend_email_otp = async (email, dispatch) => {
     }
 };
 
-
 export const forget_password = async (data, dispatch, navigate) => {
     try {
         const urlPath = `${REACT_APP_BASE_URL}api/auth/forget-password`;
@@ -155,7 +174,6 @@ export const forget_password = async (data, dispatch, navigate) => {
             navigate("/", { state: { email: data.email } });
             toast.success(res.data.message || "Password reset link sent to your email");
             return res;
-
         }
 
     } catch (error) {
@@ -168,7 +186,6 @@ export const forget_password = async (data, dispatch, navigate) => {
     }
 
 }
-
 
 export const reset_password = async (data, token, dispatch) => {
     try {
@@ -196,4 +213,56 @@ export const reset_password = async (data, token, dispatch) => {
         return { error: errorMsg };
     }
 };
+
+export const google_callback = async (dispatch) => {
+    try {
+        const urlPath = `${REACT_APP_BASE_URL}api/auth/google/callback`;
+        const res = await axios.get(urlPath);
+        console.log("res", res);
+        if (res.data?.success) {
+            dispatch({ type: IS_LOGIN, payload: res.data });
+        }
+        return res;
+    } catch (error) {
+        return null;
+    }
+}
+
+export const complete_google_register = async (data, token, dispatch) => {
+    try {
+        const urlPath = `${REACT_APP_BASE_URL}api/auth/complete-google-register`;
+        const HEADERS = {
+            headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${token}`,
+            }
+        };
+        const res = await axios.post(urlPath, data, HEADERS);
+
+        if (res.data && res.data.success === true) {
+            toast.success(res.data.message, { toastId: "updatpwd", autoClose: 1000 });
+            localStorage.setItem("token", res.data.token);
+            dispatch({ type: AUTH_DETAIL, payload: res.data });
+            toast.success("Your Account Successfully Create");
+            return res;
+        } else {
+            toast.error(res.data.message, { toastId: "updatedpwderr", autoClose: 1000 });
+        }
+    } catch (err) {
+        toast.error(err)
+    }
+}
+
+export const google_direct_login = async (dispatch, token, user) => {
+    try {
+        localStorage.setItem("token", token);
+        dispatch({ type: AUTH_DETAIL, payload: user });
+        toast.success("Login Successful");
+    } catch (error) {
+        console.log("Login error:", error);
+    }
+};
+
+
+
 

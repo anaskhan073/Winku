@@ -1,10 +1,11 @@
-import { IS_LOGIN, TOKENS_UPDATE, AUTH_DETAIL } from "./authTypes";
+import { IS_LOGIN, TOKENS_UPDATE, AUTH_DETAIL, USERDETAIL } from "./authTypes";
 
 
 const initialState = {
     isAuthenticated: false,
     accessToken: null,
     user: [],
+    userDetails: [],
 };
 
 
@@ -24,6 +25,11 @@ const authReducer = (state = initialState, action) => {
             return {
                 ...state,
                 user: action.payload,
+            };
+        case USERDETAIL:
+            return {
+                ...state,
+                userDetails: action.payload,
             };
 
         default:

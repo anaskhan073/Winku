@@ -44,7 +44,7 @@ const userSchema = new mongoose.Schema({
     },
     password: {
         type: String,
-        required: true,
+        // required: true,
         minlength: 6,
         select: false,
     },
@@ -70,7 +70,13 @@ const userSchema = new mongoose.Schema({
     },
     provider: {
         type: String,
-        default: "",
+        enum: ['manual', 'google', 'facebook', 'github', 'linkedin'],
+        default: 'manual',
+
+    },
+    termsAccepted:{
+        type: Boolean,
+        default: false,
     },
     providerId: {
         type: String,

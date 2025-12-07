@@ -7,12 +7,11 @@ import twilio from 'twilio'
 import crypto from 'crypto';
 import { OAuth2Client } from "google-auth-library";
 import axios from "axios";
+import jwt from "jsonwebtoken";
 
 
 const client = twilio(process.env.TWILIO_SID, process.env.TWILIO_AUTH_TOKEN)
 const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
-
-
 
 // register controller - STRONG PASSWORD VALIDATION
 export const register = CatchAsyncError(async (req, res, next) => {
@@ -82,7 +81,8 @@ export const register = CatchAsyncError(async (req, res, next) => {
         email: email.toLowerCase().trim(),
         password, // will be hashed by pre-save middleware
         role,
-        termsAccepted: true
+        termsAccepted: true,
+        provider: "manual",
     });
 
     // === Generate OTP for email verification ===
@@ -662,94 +662,114 @@ export const checkAuth = (req, res) => {
 };
 
 
-// social login
-export const socialLogin = CatchAsyncError(async (req, res, next) => {
-    const { provider, token } = req.body;
+// export const googleCallback = CatchAsyncError(async (req, res, next) => {
+//     const user = req.user;
 
-    if (!provider || !token) {
-        return next(new ErrorHandler("Provider and token are required.", 400));
-    }
+//     const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET_KEY, {
+//         expiresIn: "7d",
+//     });
+//     if (user.role && user.termsAccepted) {
+//         // return sendToken(user, 200, "Login successful with Google!", res);
+//         return res.redirect(user, 200, `${process.env.FRONTEND_URL}/select-user`);
+//     }
 
-    let userData;
 
-    if (provider === "google") {
-        const ticket = await googleClient.verifyIdToken({
-            idToken: token,
-            audience: process.env.GOOGLE_CLIENT_ID,
-        });
-        const payload = ticket.getPayload();
-        userData = {
-            providerId: payload.sub,
-            email: payload.email,
-            fullname: payload.name,
-            avatar: payload.picture,
-        };
-    }
+//     res.redirect(`${process.env.FRONTEND_URL}/select-user?token=${token}`);
+// });
 
-    else if (provider === "facebook") {
-        const fbRes = await axios.get(
-            `https://graph.facebook.com/me?fields=id,name,email,picture&access_token=${token}`
+export const googleCallback = CatchAsyncError(async (req, res, next) => {
+    console.log("derf")
+    const user = req.user;
+
+    const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET_KEY, {
+        expiresIn: "7d",
+    });
+
+    console.log("token", token)
+     console.log("user", user)
+
+    if (user.role && user.termsAccepted) {
+        return res.redirect(
+            `${process.env.FRONTEND_URL}/select-user?token=${token}&user=${encodeURIComponent(JSON.stringify(user))}`
         );
-        const data = fbRes.data;
-        userData = {
-            providerId: data.id,
-            email: data.email,
-            fullname: data.name,
-            avatar: data.picture?.data?.url || "",
-        };
     }
 
-    else if (provider === "github") {
-        const ghRes = await axios.get(`https://api.github.com/user`, {
-            headers: { Authorization: `Bearer ${token}` }
-        });
-        const data = ghRes.data;
-        userData = {
-            providerId: data.id,
-            email: data.email || `${data.login}@github.com`,
-            fullname: data.name || data.login,
-            avatar: data.avatar_url,
-        };
-    }
-
-    else if (provider === "linkedin") {
-        const profileRes = await axios.get(
-            "https://api.linkedin.com/v2/me",
-            { headers: { Authorization: `Bearer ${token}` } }
-        );
-        const emailRes = await axios.get(
-            "https://api.linkedin.com/v2/emailAddress?q=members&projection=(elements*(handle~))",
-            { headers: { Authorization: `Bearer ${token}` } }
-        );
-
-        userData = {
-            providerId: profileRes.data.id,
-            fullname: profileRes.data.localizedFirstName + " " + profileRes.data.localizedLastName,
-            email: emailRes.data.elements[0]["handle~"].emailAddress,
-        };
-    }
-
-    else {
-        return next(new ErrorHandler("Invalid provider", 400));
-    }
-
-    // 🔎 Check if user already exists
-    let user = await User.findOne({ providerId: userData.providerId });
-
-    if (!user) {
-        user = await User.create({
-            fullname: userData.fullname,
-            email: userData.email,
-            avatar: userData.avatar,
-            provider,
-            providerId: userData.providerId,
-            emailVerified: true,
-            password: crypto.randomBytes(16).toString("hex") // dummy password
-        });
-    }
-
-    // Send JWT token
-    sendToken(user, 200, "Login Successful!", res);
+    res.redirect(`${process.env.FRONTEND_URL}/select-user?token=${token}`);
 });
+
+
+
+
+
+//  COMPLETE GOOGLE REGISTRATION
+export const completeGoogleRegister = CatchAsyncError(async (req, res, next) => {
+    const { role, termsAccepted } = req.body;
+
+    // Validate role
+    if (!role || !["user", "creator"].includes(role)) {
+        return next(new ErrorHandler("Please select a valid role: user or creator", 400));
+    }
+
+    // === Terms Acceptance ===
+    if (termsAccepted !== true) {
+        return next(new ErrorHandler("You must accept the Terms & Privacy Policy.", 400));
+    }
+
+    const user = req.user; // Already attached by verifyGoogleToken middleware
+
+    // Prevent double completion
+    if (user.role && user.termsAccepted) {
+        return res.status(200).json({
+            success: true,
+            message: "Account already completed",
+            alreadyCompleted: true,
+            user: {
+                id: user._id,
+                fullname: user.fullname,
+                email: user.email,
+                role: user.role,
+                avatar: user.avatar,
+            },
+            token: req.headers.authorization?.split(" ")[1]
+        });
+    }
+
+    // Finalize user registration
+    user.role = role;
+    user.termsAccepted = true;
+    await user.save();
+
+    // Generate proper long-lived JWT token
+    const token = jwt.sign(
+        { id: user._id },
+        process.env.JWT_SECRET_KEY,
+        { expiresIn: "7d" }
+    );
+
+    // Set cookie (same as sendToken does)
+    res.cookie("token", token, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: "strict",
+        maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+    });
+
+    // Send full response with token and user data
+    return res.status(200).json({
+        success: true,
+        message: "Your Role Set Successfully",
+        token,
+        user: {
+            id: user._id,
+            fullname: user.fullname,
+            email: user.email,
+            role: user.role,
+            avatar: user.avatar,
+            emailVerified: user.emailVerified,
+            provider: user.provider,
+        }
+    });
+});
+
 
 

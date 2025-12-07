@@ -18,9 +18,7 @@ app.use(cors({
     credentials: true,
 }));
 
-
 console.log(process.env.GOOGLE_CLIENT_ID, process.env.GOOGLE_CLIENT_SECRET);
-
 
 app.use(express.json());
 app.use(cookieParser());
