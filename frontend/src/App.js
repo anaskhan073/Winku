@@ -17,17 +17,28 @@ const App = () => {
   const dispatch = useDispatch();
   const { isAuthenticated, userDetails } = useSelector((state) => state.auth);
 
+  const token = localStorage.getItem("token");
+
+  const islogin = isAuthenticated?.authenticated
+
   useEffect(() => {
-    check_auth(dispatch);
-  }, [dispatch]);
+    if (islogin) {
+      get_user(dispatch, token)
+    }
+  }, []);
 
-  const islogin = localStorage.getItem("token") || isAuthenticated?.authenticated;
+  useEffect(() => {
+    check_auth(dispatch, token);
+  }, []);
 
-  if(islogin){
-    get_user(dispatch)
-  }
+  useEffect(() => {
+    if (islogin) {
+      get_user(dispatch, token);
+    }
+  }, [islogin]); 
 
-  console.log("userDetails",userDetails)
+
+  console.log("userDetails", userDetails)
   return (
     <>
       <Routes>

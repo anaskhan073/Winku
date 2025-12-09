@@ -10,6 +10,8 @@ const Login = () => {
   const dispatch = useDispatch();
   const [showPassword, setShowPassword] = useState(false);
   const [islogin, setIsLogin] = useState(false);
+  const token = localStorage.getItem("token");
+  
   const [formData, setFormData] = useState({
     emailOrPhone: "",
     password: "",
@@ -20,7 +22,7 @@ const Login = () => {
     e.preventDefault();
     const response = login(formData, dispatch);
     if (response) {
-      check_auth(dispatch);
+      check_auth(dispatch, token);
     }
     setIsLogin(false);
   };

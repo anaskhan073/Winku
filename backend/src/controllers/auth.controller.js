@@ -1,4 +1,4 @@
-import { sendEmailOTP, ForgetPasswordEmail } from "../lib/sendEmail.js"
+import { sendEmailOTP, ForgetPasswordEmail, WelcomeEmail } from "../lib/sendEmail.js"
 import { sendToken } from "../lib/SendToken.js"
 import { CatchAsyncError } from "../middleware/CatchAsyncError.js"
 import ErrorHandler from "../middleware/error.js"
@@ -93,9 +93,10 @@ export const register = CatchAsyncError(async (req, res, next) => {
     try {
         await emailsendVerificationCode(verificationCode, fullname, email, role);
     } catch (error) {
-        user.emailVerificationCode = undefined;
-        user.emailVerificationExpire = undefined;
+        user.emailverificationCode = undefined;
+        user.emailverificationCodeExpire = undefined;
         await user.save({ validateBeforeSave: false });
+        console.log("error", error)
         return next(new ErrorHandler("Failed to send verification email. Try again.", 500));
     }
 
@@ -127,22 +128,11 @@ async function emailsendVerificationCode(
             verificationCode,
             logo: "https://www.wpkixx.com/html/winku/images/logo.png",
         });
-        console.log("Email sent successfully222", email, verificationCode);
-        return res.status(200).json({
-            success: true,
-            message: `Verification email successfully sent to ${name}`,
-        });
+        // return res.status(200).json({ success: true, message: `Verification email successfully sent to ${name}`, });
+        return true;
     } catch (error) {
-        console.error("Email Error:", {
-            message: error.message,
-            code: error.code,
-            status: error.status,
-        });
-        return res.status(500).json({
-            success: false,
-            message: "Failed to send OTP.",
-            error: error.message,
-        });
+        console.error("Email Error:", error);
+        return res.status(500).json({ success: false, message: "Failed to send OTP.", error: error.message, });
     }
 }
 
@@ -214,6 +204,7 @@ export const resendEmailOTP = CatchAsyncError(async (req, res, next) => {
         return next(new ErrorHandler("Failed to send OTP. Please try again.", 500));
     }
 });
+
 
 // send phone verification code
 async function phonesendVerificationCode(
@@ -352,6 +343,12 @@ export const emailverifyOTP = CatchAsyncError(async (req, res, next) => {
         await user.save({ validateModifiedOnly: true });
 
         // === SEND JWT TOKEN ===
+        await WelcomeEmail({
+            user,
+            email,
+            logo: "https://www.wpkixx.com/html/winku/images/logo.png",
+        });
+
         sendToken(user, 200, "Email verified successfully!", res);
 
     } catch (error) {
@@ -482,9 +479,13 @@ export const login = CatchAsyncError(async (req, res, next) => {
 
         if (!user) {
             // Check if phone exists but not verified
-            const unverifiedUser = await User.findOne({ phone: emailOrPhone });
-            if (unverifiedUser && !unverifiedUser.phoneVerified) {
+            const phoneunverifiedUser = await User.findOne({ phone: emailOrPhone });
+            if (unverifiedUser && !phoneunverifiedUser.phoneVerified) {
                 return next(new ErrorHandler("Phone number not verified. Please verify your phone first.", 403));
+            }
+            const emailunverifiedUser = await User.findOne({ phone: emailOrPhone });
+            if (unverifiedUser && !emailunverifiedUser.emailVerified) {
+                return next(new ErrorHandler("Email not verified. Please verify your email first.", 403));
             }
         }
     }
@@ -500,7 +501,6 @@ export const login = CatchAsyncError(async (req, res, next) => {
         return next(new ErrorHandler("Invalid credentials", 401));
     }
 
-    // Step 5: Login successful
     sendToken(user, 200, "Login successful!", res);
 });
 
@@ -630,63 +630,47 @@ export const resetPassword = CatchAsyncError(async (req, res, next) => {
 
 
 // check auth
-export const checkAuth = (req, res) => {
-    const token = req.cookies?.token;
-
-    if (!token) {
-        return res.json({ success: true, authenticated: false });
-    }
-
+export const checkAuth = async (req, res) => {
     try {
+        const token = req.headers?.token;
+
+        if (!token) {
+            return res.json({ success: true, authenticated: false });
+        }
+
         const decoded = jwt.verify(token, process.env.JWT_SECRET_KEY);
-        // Optional: fetch fresh user
-        User.findById(decoded.id).then(user => {
-            if (user) {
-                return res.json({
-                    success: true,
-                    authenticated: true,
-                    user: {
-                        id: user._id,
-                        name: user.name,
-                        email: user.email,
-                        username: user.username,
-                        role: user.role,
-                    },
-                });
-            }
-            res.json({ success: true, authenticated: false });
+
+        const user = await User.findById(decoded.id);
+
+        if (!user) {
+            return res.json({ success: true, authenticated: false });
+        }
+
+        return res.json({
+            success: true,
+            authenticated: true,
+            user: {
+                id: user._id,
+                name: user.name,
+                email: user.email,
+                username: user.username,
+                role: user.role,
+            },
         });
-    } catch {
-        res.json({ success: true, authenticated: false });
+
+    } catch (err) {
+        console.error("Auth error:", err);
+        return res.json({ success: true, authenticated: false });
     }
 };
 
 
-// export const googleCallback = CatchAsyncError(async (req, res, next) => {
-//     const user = req.user;
-
-//     const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET_KEY, {
-//         expiresIn: "7d",
-//     });
-//     if (user.role && user.termsAccepted) {
-//         // return sendToken(user, 200, "Login successful with Google!", res);
-//         return res.redirect(user, 200, `${process.env.FRONTEND_URL}/select-user`);
-//     }
-
-
-//     res.redirect(`${process.env.FRONTEND_URL}/select-user?token=${token}`);
-// });
-
 export const googleCallback = CatchAsyncError(async (req, res, next) => {
-    console.log("derf")
     const user = req.user;
 
     const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET_KEY, {
         expiresIn: "7d",
     });
-
-    console.log("token", token)
-     console.log("user", user)
 
     if (user.role && user.termsAccepted) {
         return res.redirect(
@@ -696,9 +680,6 @@ export const googleCallback = CatchAsyncError(async (req, res, next) => {
 
     res.redirect(`${process.env.FRONTEND_URL}/select-user?token=${token}`);
 });
-
-
-
 
 
 //  COMPLETE GOOGLE REGISTRATION
@@ -755,6 +736,13 @@ export const completeGoogleRegister = CatchAsyncError(async (req, res, next) => 
     });
 
     // Send full response with token and user data
+    console.log("Social Login user", user)
+    await WelcomeEmail({
+        email: user.email,
+        user,
+        logo: "https://www.wpkixx.com/html/winku/images/logo.png",
+    });
+
     return res.status(200).json({
         success: true,
         message: "Your Role Set Successfully",

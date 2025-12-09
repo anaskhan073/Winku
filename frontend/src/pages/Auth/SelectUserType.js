@@ -14,24 +14,25 @@ const SelectUserType = () => {
     role: "user",
     termsAccepted: false,
   });
+  const check_authtoken = localStorage.getItem("token");
 
   const [googleUser, setGoogleUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
   // Extract token from URL and decode user
+  const query = new URLSearchParams(location.search);
+  const token = query.get("token");
+  const user = query.get("user");
   useEffect(() => {
     google_callback(dispatch)
-    const query = new URLSearchParams(location.search);
-    const token = query.get("token");
-    const user = query.get("user");
 
-    if(user!=null){
+    if (user != null) {
       google_direct_login(dispatch, token, user)
-      check_auth(dispatch)
-    } else{
+      check_auth(dispatch, token)
+    } else {
       toast.success("Your Account Successfully Create. Select Your Role!")
     }
-    
+
     if (token) {
       try {
         const decoded = jwtDecode(token);
@@ -43,7 +44,7 @@ const SelectUserType = () => {
     setLoading(false);
   }, [location]);
 
-  const handleSubmit = async (e) => {    
+  const handleSubmit = async (e) => {
     e.preventDefault();
     const token = new URLSearchParams(location.search).get("token");
     if (!token) {
@@ -52,15 +53,19 @@ const SelectUserType = () => {
       return;
     }
     let response;
-    if(formData.termsAccepted==false){
-      toast.error("You must be Agree Term & Conditions!")
-    } else{
+    if (formData.termsAccepted == false) {
+      toast.error("You must accept the Terms & Privacy Policy.")
+    } else {
       response = await complete_google_register(formData, token, dispatch, navigate)
     }
+
     if (response) {
-      check_auth(dispatch);
+      check_auth(dispatch, token)
     }
+
+
   };
+
 
   if (loading) return <div>Loading...</div>;
 

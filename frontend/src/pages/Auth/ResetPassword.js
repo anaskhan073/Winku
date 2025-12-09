@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import Authsidescreen from '../../components/auth/Authsidescreen'
 import { reset_password, check_auth } from "../../reduxData/auth/authAction";
 import { useDispatch, useSelector } from "react-redux";
-import { useNavigate, useLocation  } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import toast from "react-hot-toast";
 
 
@@ -17,11 +17,10 @@ const ResetPassword = () => {
         password: "",
         confirmPassword: "",
     });
-
+    const checktoken = localStorage.getItem("token");
     // Extract token from URL
     const queryParams = new URLSearchParams(location.search);
-    const token = queryParams.get('token'); 
-    console.log("Reset token:", token);
+    const token = queryParams.get('token');
     const handleSubmit = async (e) => {
         setIsLoding(true);
         e.preventDefault();
@@ -34,10 +33,9 @@ const ResetPassword = () => {
 
         // Include the token in the reset password request
         const response = await reset_password(formData, token, dispatch); // Pass token as part of the request
-        // if (response) {
-        //     check_auth(dispatch);
-        //     navigate('/login');
-        // }
+        if (response) {
+            check_auth(dispatch, checktoken);
+        }
         setIsLoding(false);
     };
 

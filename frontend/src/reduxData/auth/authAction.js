@@ -6,10 +6,15 @@ const { REACT_APP_BASE_URL } = process.env;
 
 
 
-export const check_auth = async (dispatch) => {
+export const check_auth = async (dispatch, token) => {
     try {
         const urlPath = `${REACT_APP_BASE_URL}api/auth/check-auth`;
-        const res = await axios.get(urlPath);
+        const HEADERS = {
+            headers: {
+                "token": token,
+            },
+        };
+        const res = await axios.get(urlPath, HEADERS);
         if (res.data?.success) {
             dispatch({ type: IS_LOGIN, payload: res.data });
         }
@@ -69,10 +74,15 @@ export const user_logout = async (dispatch, token) => {
     }
 };
 
-export const get_user = async (dispatch) => {
+export const get_user = async (dispatch, token) => {
     try {
         const urlPath = `${REACT_APP_BASE_URL}api/auth/get-user`;
-        const res = await axios.get(urlPath);
+        const HEADERS = {
+            headers: {
+                "token": token,
+            },
+        };
+        const res = await axios.get(urlPath, HEADERS);
 
         if (res.data && res.data.success === true) {
             dispatch({ type: USERDETAIL, payload: res.data });
@@ -191,6 +201,7 @@ export const reset_password = async (data, token, dispatch) => {
     try {
         const urlPath = `${REACT_APP_BASE_URL}api/auth/reset-password/${token}`;
         const res = await axios.put(urlPath, data);
+        console.log(res)
 
         if (res.data && res.data.success === true) {
             localStorage.setItem("token", res.data.token);
@@ -243,7 +254,7 @@ export const complete_google_register = async (data, token, dispatch) => {
             toast.success(res.data.message, { toastId: "updatpwd", autoClose: 1000 });
             localStorage.setItem("token", res.data.token);
             dispatch({ type: AUTH_DETAIL, payload: res.data });
-            toast.success("Your Account Successfully Create");
+            // toast.success("Your Account Successfully Create");
             return res;
         } else {
             toast.error(res.data.message, { toastId: "updatedpwderr", autoClose: 1000 });

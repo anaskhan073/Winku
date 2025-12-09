@@ -15,9 +15,13 @@ const EmailVerification = () => {
     const location = useLocation();
 
     const email = location.state?.email;
+    const token = localStorage.getItem("token");
 
     useEffect(() => {
         inputRefs.current[0]?.focus();
+    }, []);
+    useEffect(() => {
+        
     }, []);
 
     const handleChange = (index, value) => {
@@ -87,7 +91,7 @@ const EmailVerification = () => {
         const payload = { email: email, otp: otp.join("") };
         const response = await email_otp_verify(payload, dispatch);
         if (response) {
-            check_auth(dispatch);
+            check_auth(dispatch, token);
         }
         setIsLoading(false);
     };
